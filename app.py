@@ -7,11 +7,11 @@ from depthcrafter.inference import DepthCrafterInference
 logging.basicConfig(level=logging.INFO)
 
 examples = [
-    ["examples/example_01.mp4", 5, 1.0, 1024, -1, -1],
-    ["examples/example_02.mp4", 5, 1.0, 1024, -1, -1],
-    ["examples/example_03.mp4", 5, 1.0, 1024, -1, -1],
-    ["examples/example_04.mp4", 5, 1.0, 1024, -1, -1],
-    ["examples/example_05.mp4", 5, 1.0, 1024, -1, -1],
+    ["examples/example_01.mp4", 5, 1.0, 512, -1, -1],
+    ["examples/example_02.mp4", 5, 1.0, 512, -1, -1],
+    ["examples/example_03.mp4", 5, 1.0, 512, -1, -1],
+    ["examples/example_04.mp4", 5, 1.0, 512, -1, -1],
+    ["examples/example_05.mp4", 5, 1.0, 512, -1, -1],
 ]
 
 # Initialize the inference class globally
@@ -211,4 +211,4 @@ if __name__ == "__main__":
     demo.queue()
     # demo.launch(server_name="0.0.0.0", server_port=12345,
     #             debug=True, share=False)
-    demo.launch(share=True)
+    demo.launch()
