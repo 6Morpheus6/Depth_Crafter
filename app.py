@@ -1,10 +1,10 @@
 import logging
 import gradio as gr
-import spaces
 
 from depthcrafter.inference import DepthCrafterInference
 
 logging.basicConfig(level=logging.INFO)
+logging.getLogger("asyncio").setLevel(logging.CRITICAL)
 
 examples = [
     ["examples/example_01.mp4", 5, 1.0, 512, -1, -1],
@@ -22,7 +22,6 @@ depthcrafter_inference = DepthCrafterInference(
 )
 
 
-@spaces.GPU(duration=120)
 def infer_depth(
     video: str,
     num_denoising_steps: int,
@@ -172,9 +171,6 @@ def construct_demo():
                 process_length,
                 process_target_fps,
             ],
-            outputs=[output_video_1, output_video_2],
-            fn=infer_depth,
-            cache_examples="lazy",
         )
         gr.Markdown(
             """

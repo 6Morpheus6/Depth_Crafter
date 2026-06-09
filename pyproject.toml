@@ -23,7 +23,6 @@ dependencies = [
     "mediapy>=1.2.4",
     "pydantic==2.10.6",
     "pytest>=9.0.1",
-    "spaces",
     "transformers==4.57.6",
 ]
 
