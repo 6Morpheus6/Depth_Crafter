@@ -1,3 +1,6 @@
+import os
+import glob
+import shutil
 import logging
 import gradio as gr
 
@@ -7,11 +10,11 @@ logging.basicConfig(level=logging.INFO)
 logging.getLogger("asyncio").setLevel(logging.CRITICAL)
 
 examples = [
-    ["examples/example_01.mp4", 5, 1.0, 512, -1, -1],
-    ["examples/example_02.mp4", 5, 1.0, 512, -1, -1],
-    ["examples/example_03.mp4", 5, 1.0, 512, -1, -1],
-    ["examples/example_04.mp4", 5, 1.0, 512, -1, -1],
-    ["examples/example_05.mp4", 5, 1.0, 512, -1, -1],
+    ["examples/example_01.mp4", 5, 1.0, 512, -1, -1, False, False],
+    ["examples/example_02.mp4", 5, 1.0, 512, -1, -1, False, False],
+    ["examples/example_03.mp4", 5, 1.0, 512, -1, -1, False, False],
+    ["examples/example_04.mp4", 5, 1.0, 512, -1, -1, False, False],
+    ["examples/example_05.mp4", 5, 1.0, 512, -1, -1, False, False],
 ]
 
 # Initialize the inference class globally
@@ -29,12 +32,13 @@ def infer_depth(
     max_res: int = 1024,
     process_length: int = -1,
     target_fps: int = -1,
+    save_npz: bool = False,
+    save_exr: bool = False,
     save_folder: str = "./demo_output",
     window_size: int = 110,
     overlap: int = 25,
     seed: int = 42,
     track_time: bool = True,
-    save_npz: bool = False,
 ):
     """
     Gradio inference function.
@@ -52,12 +56,35 @@ def infer_depth(
         seed=seed,
         track_time=track_time,
         save_npz=save_npz,
+        save_exr=save_exr,
     )
 
     depthcrafter_inference.clear_cache()
 
-    # Returning input and vis as per original code behavior
-    return res_paths[:2]
+    video_base_name = os.path.splitext(os.path.basename(video))[0]
+    
+    found_files = []
+
+    if os.path.exists(save_folder):
+        npz_pattern = os.path.join(save_folder, f"*{video_base_name}*.npz")
+        found_files.extend(glob.glob(npz_pattern))
+        
+        specific_exr_folder = os.path.join(save_folder, video_base_name)
+        if os.path.isdir(specific_exr_folder) and os.listdir(specific_exr_folder):
+            zip_base_name = os.path.join(save_folder, f"{video_base_name}_exr_frames")
+            shutil.make_archive(zip_base_name, 'zip', specific_exr_folder)
+            found_files.append(f"{zip_base_name}.zip")
+
+    if found_files:
+        files_output = gr.File(
+            value=found_files, 
+            visible=True, 
+            label="Download Extra Outputs"
+        )
+    else:
+        files_output = gr.File(visible=False)
+
+    return res_paths[0], res_paths[1], files_output
 
 
 def construct_demo():
@@ -118,7 +145,13 @@ def construct_demo():
                         scale=5,
                     )
 
-        with gr.Row(equal_height=True):
+                output_files = gr.File(
+                    label="Download Extra Outputs (.npz / .exr)",
+                    file_count="multiple",
+                    visible=False
+                )
+
+        with gr.Row(equal_height=False):
             with gr.Column(scale=1):
                 with gr.Row(equal_height=False):
                     with gr.Accordion("Advanced Settings", open=False):
@@ -156,10 +189,20 @@ def construct_demo():
                             maximum=30,
                             value=15,
                             step=1,
-                        )
-                    generate_btn = gr.Button("Generate")
+                        )                        
+
+                        with gr.Row():
+                            save_npz_checkbox = gr.Checkbox(
+                                label="Save Depth Map as .npz", 
+                                value=False
+                            )
+                            save_exr_checkbox = gr.Checkbox(
+                                label="Save Depth Map as .exr (32-bit Float)", 
+                                value=False
+                            )
+
             with gr.Column(scale=2):
-                pass
+                generate_btn = gr.Button("Generate")
 
         gr.Examples(
             examples=examples,
@@ -170,6 +213,8 @@ def construct_demo():
                 max_res,
                 process_length,
                 process_target_fps,
+                save_npz_checkbox,
+                save_exr_checkbox,
             ],
         )
         gr.Markdown(
@@ -195,8 +240,10 @@ def construct_demo():
                 max_res,
                 process_length,
                 process_target_fps,
+                save_npz_checkbox,
+                save_exr_checkbox,
             ],
-            outputs=[output_video_1, output_video_2],
+            outputs=[output_video_1, output_video_2, output_files],
         )
 
     return depthcrafter_iface
